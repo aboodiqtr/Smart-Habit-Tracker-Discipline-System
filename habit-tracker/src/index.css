@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@layer components {
+ 
+  .dashboard-card {
+    @apply bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm transition-transform active:scale-95;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  @apply bg-slate-50 text-slate-900; /* خلفية رمادية فاتحة جداً */
+}
