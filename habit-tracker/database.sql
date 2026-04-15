@@ -66,3 +66,46 @@ VALUES (
   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- admin1234
   'admin'
 );
+-- ============================================================
+-- iTrack — Database Update Script
+-- Run these in MySQL Workbench (in order)
+-- ============================================================
+
+-- 1. إضافة عمود blocked لجدول المستخدمين
+ALTER TABLE users 
+ADD COLUMN blocked BOOLEAN DEFAULT FALSE AFTER satisfaction;
+
+-- 2. إضافة أعمدة التتبع لجدول العادات
+ALTER TABLE habits 
+ADD COLUMN last_action_date DATE NULL AFTER progress;
+
+ALTER TABLE habits 
+ADD COLUMN action_type ENUM('resisted','spent') NULL AFTER last_action_date;
+
+-- 3. إنشاء جدول الرسائل العامة
+CREATE TABLE IF NOT EXISTS public_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_id INT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 4. تحديث البيانات القديمة
+UPDATE habits SET completed = FALSE, last_action_date = NULL, action_type = NULL;
+
+CREATE TABLE IF NOT EXISTS public_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_id INT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- إذا كان لديك جدول مستخدمين، يفضل إضافة مفتاح أجنبي (اختياري)
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+);
+-- 4. Reset old habits so they work with new logic
+UPDATE habits SET completed = FALSE, last_action_date = NULL, action_type = NULL;
+
+-- Verify
+SELECT 'users columns:' as info; DESCRIBE users;
+SELECT 'habits columns:' as info; DESCRIBE habits;
+SELECT 'public_messages:' as info; DESCRIBE public_messages;
