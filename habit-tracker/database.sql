@@ -8,6 +8,8 @@ CREATE DATABASE IF NOT EXISTS discipline_app
 
 USE discipline_app;
 
+
+
 -- ── Users ──────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS users (
   id         INT AUTO_INCREMENT PRIMARY KEY,
@@ -59,11 +61,10 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 -- ── Admin account (password: admin1234) ────────────
-INSERT IGNORE INTO users (name, email, password, role)
+INSERT IGNORE INTO users (name, email, role)
 VALUES (
   'Admin',
   'admin@admin.ad',
-  '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- admin1234
   'admin'
 );
 -- ============================================================

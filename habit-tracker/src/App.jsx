@@ -229,14 +229,17 @@ export default function App() {
   async function handleHabitAction(habitId, type) {
     try {
       const res = await api(`/habits/${habitId}/action`, { method:"PATCH", body:{ type } });
+      const saved = parseFloat(res.savedAmount) || 0;
       setHabits(prev => prev.map(h =>
-        h.id === habitId ? { ...h, actedToday:true, action_type:type, streak:res.newStreak, progress:res.newProgress } : h
+        h.id === habitId
+          ? { ...h, actedToday:true, action_type:type, streak:res.newStreak, progress:res.newProgress, reward: h.reward }
+          : h
       ));
-      if (type === 'resisted' && res.savedAmount > 0) {
-        setUser(u => ({ ...u, savings: Number(u.savings) + res.savedAmount }));
+      if (type === 'resisted' && saved > 0) {
+        setUser(u => ({ ...u, savings: (parseFloat(u.savings) || 0) + saved }));
       }
       setShowRating(true);
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error("Action error:", e); }
   }
 
   async function handleRating(score) {
@@ -313,8 +316,9 @@ export default function App() {
     setAdminUsers(prev => prev.filter(u => u.id !== id));
   }
 
+  const safeNum = v => parseFloat(v) || 0;
   const visibleHabits = habits.filter(h => h.name.toLowerCase().includes(searchQ.toLowerCase()));
-  const savedToday = habits.filter(h => h.actedToday && h.action_type === 'resisted').reduce((s, h) => s + Number(h.reward || 0), 0);
+  const savedToday = habits.filter(h => h.actedToday && h.action_type === 'resisted').reduce((s, h) => s + safeNum(h.reward), 0);
   const resistedCount = habits.filter(h => h.actedToday && h.action_type === 'resisted').length;
 
   // ── CHECK EMAIL ────────────────────────────────────────────────────────────────
@@ -556,13 +560,13 @@ export default function App() {
           <div style={{ background:"linear-gradient(135deg,#4338ca,#7c3aed)",borderRadius:24,padding:"1.4rem",marginBottom:"1.15rem",position:"relative",overflow:"hidden",boxShadow:"0 16px 48px rgba(99,102,241,0.22)" }}>
             <div style={{ position:"absolute",right:-15,bottom:-15,opacity:0.07 }}><TrendingUp size={110}/></div>
             <p style={{ fontSize:9,letterSpacing:"0.14em",color:"rgba(255,255,255,0.5)",textTransform:"uppercase",margin:"0 0 6px" }}>{t.savings}</p>
-            <div style={{ fontSize:38,fontWeight:900,color:"white",letterSpacing:"-1px" }}>₺{Number(currentUser?.savings??0).toFixed(2)}</div>
+            <div style={{ fontSize:38,fontWeight:900,color:"white",letterSpacing:"-1px" }}>₺{safeNum(currentUser?.savings).toFixed(2)}</div>
             <div style={{ display:"flex",gap:16,marginTop:10 }}>
-              <div style={{ fontSize:11,color:"rgba(255,255,255,0.5)" }}>Today saved: <strong style={{ color:"rgba(255,255,255,0.85)" }}>₺{savedToday}</strong></div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,0.5)" }}>Today saved: <strong style={{ color:"rgba(255,255,255,0.85)" }}>₺{savedToday.toFixed(2)}</strong></div>
               <div style={{ fontSize:11,color:"rgba(255,255,255,0.5)" }}>Resisted: <strong style={{ color:"rgba(255,255,255,0.85)" }}>{resistedCount}/{habits.length}</strong></div>
             </div>
             <div style={{ marginTop:"0.9rem",height:4,background:"rgba(255,255,255,0.15)",borderRadius:99,overflow:"hidden" }}>
-              <div style={{ height:"100%",background:"rgba(255,255,255,0.65)",borderRadius:99,width:`${Math.min(100,((currentUser?.savings??0)/1000)*100)}%`,transition:"width 0.6s" }}/>
+              <div style={{ height:"100%",background:"rgba(255,255,255,0.65)",borderRadius:99,width:`${Math.min(100,(safeNum(currentUser?.savings)/1000)*100)}%`,transition:"width 0.6s" }}/>
             </div>
           </div>
 
@@ -594,7 +598,7 @@ export default function App() {
             {visibleHabits.map(h=>(
               <div key={h.id} style={{ background:h.actedToday?(h.action_type==="resisted"?"#f0fdf8":"#fff5f5"):"white",border:`1.5px solid ${h.actedToday?(h.action_type==="resisted"?"#a7f3d0":"#fecaca"):C.border}`,borderRadius:20,padding:"1rem",display:"flex",flexDirection:"column",gap:7,boxShadow:"0 2px 12px rgba(99,102,241,0.05)" }}>
                 <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                  <span style={{ background:"#ede9fe",color:C.primary,fontSize:10,fontWeight:800,padding:"3px 8px",borderRadius:8 }}>₺{h.reward}/day</span>
+                  <span style={{ background:"#ede9fe",color:C.primary,fontSize:10,fontWeight:800,padding:"3px 8px",borderRadius:8 }}>₺{safeNum(h.reward)}/day</span>
                   <div style={{ display:"flex",alignItems:"center",gap:5 }}>
                     <span style={{ fontSize:11,color:"#f59e0b",fontWeight:700 }}>🔥{h.streak}</span>
                     <button onClick={()=>handleDeleteHabit(h.id)} style={{ background:"none",border:"none",cursor:"pointer",color:"#fca5a5",padding:2,display:"flex" }}><Trash2 size={12}/></button>
@@ -609,7 +613,7 @@ export default function App() {
                 </div>
                 {h.actedToday ? (
                   <div style={{ textAlign:"center",padding:"8px 0",borderRadius:11,background:h.action_type==="resisted"?"#dcfce7":"#fee2e2",fontSize:12,fontWeight:700,color:h.action_type==="resisted"?"#059669":"#dc2626" }}>
-                    {h.action_type==="resisted"?`${t.resistedDone} ₺${h.reward}!`:t.spentDone}
+                    {h.action_type==="resisted"?`${t.resistedDone} ₺${safeNum(h.reward)}!`:t.spentDone}
                   </div>
                 ) : (
                   <div style={{ display:"flex",gap:5 }}>
@@ -818,7 +822,7 @@ export default function App() {
             </div>
             <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:"1rem" }}>
               {[
-                { label:"Savings",      val:`₺${Number(currentUser?.savings??0).toFixed(2)}`, color:"#10b981", bg:"#f0fdf4" },
+                { label:"Savings",      val:`₺${safeNum(currentUser?.savings).toFixed(2)}`, color:"#10b981", bg:"#f0fdf4" },
                 { label:"Habits",       val:habits.length,                                      color:C.primary, bg:"#f5f3ff" },
                 { label:"Satisfaction", val:`${currentUser?.satisfaction??0}/10`,               color:"#f59e0b", bg:"#fffbeb" },
                 { label:"Best Streak",  val:`${habits.reduce((m,h)=>Math.max(m,h.streak),0)}🔥`, color:"#ec4899", bg:"#fdf2f8" },
@@ -874,7 +878,7 @@ export default function App() {
             ))}
             {newHabit.daily_cost && (
               <div style={{ background:"#f0fdf4",borderRadius:10,padding:"10px 14px",marginBottom:"1rem",fontSize:12,color:"#059669",fontWeight:600 }}>
-                If you resist: <strong>+₺{newHabit.daily_cost}</strong> added to savings each day 💰
+                If you resist: <strong>+₺{safeNum(newHabit.daily_cost).toFixed(2)}</strong> added to savings each day 💰
               </div>
             )}
             <button onClick={handleAddHabit} style={{ width:"100%",padding:"13px",background:"linear-gradient(135deg,#6366f1,#818cf8)",border:"none",borderRadius:13,color:"white",fontWeight:800,fontSize:15,cursor:"pointer" }}>
