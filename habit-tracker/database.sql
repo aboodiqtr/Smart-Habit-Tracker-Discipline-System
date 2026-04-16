@@ -110,3 +110,5 @@ UPDATE habits SET completed = FALSE, last_action_date = NULL, action_type = NULL
 SELECT 'users columns:' as info; DESCRIBE users;
 SELECT 'habits columns:' as info; DESCRIBE habits;
 SELECT 'public_messages:' as info; DESCRIBE public_messages;
+
+-- 010101
