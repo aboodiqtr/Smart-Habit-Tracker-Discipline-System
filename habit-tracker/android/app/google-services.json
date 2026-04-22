@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "104307452512",
+    "project_id": "itracker-51b81",
+    "storage_bucket": "itracker-51b81.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:104307452512:android:0d7672419f22a7fe2a3105",
+        "android_client_info": {
+          "package_name": "com.Itrack.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqxDl2fZURxxaBKDgYpi2QSoWgI2EOfmQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
