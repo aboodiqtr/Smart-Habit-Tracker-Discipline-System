@@ -111,10 +111,11 @@ app.patch("/api/me/satisfaction", authMiddleware, async (req, res) => {
 // spent today    → no savings, streak resets to 0
 
 app.post("/api/habits", authMiddleware, async (req, res) => {
-  const { name, goal, daily_cost } = req.body;
+  const { name, goal, daily_cost, habit_type } = req.body;
+  const type = habit_type === "non_spendable" ? "non_spendable" : "spendable";
   const [result] = await db.query(
-    "INSERT INTO habits (user_id, name, goal, reward) VALUES (?, ?, ?, ?)",
-    [req.user.id, name.trim(), goal?.trim() || "", Number(daily_cost) || 10]
+    "INSERT INTO habits (user_id, name, goal, reward, habit_type) VALUES (?, ?, ?, ?, ?)",
+    [req.user.id, name.trim(), goal?.trim() || "", type === "spendable" ? (Number(daily_cost) || 10) : 0, type]
   );
   const [rows] = await db.query("SELECT * FROM habits WHERE id = ?", [result.insertId]);
   res.json(formatHabit(rows[0]));
@@ -122,7 +123,7 @@ app.post("/api/habits", authMiddleware, async (req, res) => {
 
 app.patch("/api/habits/:id/action", authMiddleware, async (req, res) => {
   const { type } = req.body;
-  if (!['resisted', 'spent'].includes(type)) return res.status(400).json({ error: "Invalid type" });
+  if (!['resisted', 'spent', 'did', 'didnt'].includes(type)) return res.status(400).json({ error: "Invalid type" });
 
   const [rows] = await db.query("SELECT * FROM habits WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
   if (!rows.length) return res.status(404).json({ error: "Not found" });
@@ -132,8 +133,9 @@ app.patch("/api/habits/:id/action", authMiddleware, async (req, res) => {
   const lastDate = habit.last_action_date ? new Date(habit.last_action_date).toISOString().split('T')[0] : null;
   if (lastDate === today) return res.status(400).json({ error: "Already acted today" });
 
-  const newStreak   = type === 'resisted' ? habit.streak + 1 : 0;
-  const newProgress = type === 'resisted' ? Math.min(100, habit.progress + 20) : Math.max(0, habit.progress - 5);
+  const isPositive = type === 'resisted' || type === 'did';
+  const newStreak   = isPositive ? habit.streak + 1 : 0;
+  const newProgress = isPositive ? Math.min(100, habit.progress + 20) : Math.max(0, habit.progress - 5);
   const savedAmount = type === 'resisted' ? Number(habit.reward || 0) : 0;
 
   await db.query(
@@ -287,5 +289,3 @@ io.on("connection", (socket) => {
 });
 
 http.listen(3001, () => console.log("✅ iTrack Server running on http://localhost:3001"));
-
-// 010101

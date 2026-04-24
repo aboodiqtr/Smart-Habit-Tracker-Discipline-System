@@ -48,6 +48,13 @@ const T = {
     communityTitle: "Community", publicChat: "Public Chat", members: "Members",
     typePublic: "Message everyone…", noPublicMsgs: "No messages yet. Start the conversation!",
     adminBadge: "Admin",
+    habitTypeQ: "What type of habit is this?",
+    habitTypeSpend: "💸 Spendable",
+    habitTypeSpendDesc: "Has a daily cost (e.g. smoking, coffee)",
+    habitTypeNonSpend: "🏃 Non-Spendable",
+    habitTypeNonSpendDesc: "Activity-based (e.g. running, sleeping early)",
+    did: "✅ I Did It", didnt: "❌ I Didn't",
+    didDone: "✅ Done — Great job!", didntDone: "❌ Skipped today",
   },
   ar: {
     appName: "iTrack", login: "تسجيل الدخول", register: "إنشاء حساب", logout: "خروج",
@@ -73,6 +80,13 @@ const T = {
     communityTitle: "المجتمع", publicChat: "دردشة عامة", members: "الأعضاء",
     typePublic: "اكتب للجميع…", noPublicMsgs: "لا رسائل بعد. ابدأ المحادثة!",
     adminBadge: "مسؤول",
+    habitTypeQ: "ما نوع هذه العادة؟",
+    habitTypeSpend: "💸 قابلة للصرف",
+    habitTypeSpendDesc: "لها تكلفة يومية (مثل التدخين، القهوة)",
+    habitTypeNonSpend: "🏃 غير قابلة للصرف",
+    habitTypeNonSpendDesc: "نشاط يومي (مثل الركض، النوم مبكراً)",
+    did: "✅ فعلت", didnt: "❌ لم أفعل",
+    didDone: "✅ أحسنت! تم اليوم", didntDone: "❌ لم تُكمل اليوم",
   }
 };
 
@@ -119,7 +133,8 @@ export default function App() {
   const [searchQ, setSearchQ] = useState("");
   const [showRating, setShowRating] = useState(false);
   const [showAddHabit, setShowAddHabit] = useState(false);
-  const [newHabit, setNewHabit] = useState({ name:"", goal:"", daily_cost:"" });
+  const [habitStep, setHabitStep] = useState("type"); // "type" | "details"
+  const [newHabit, setNewHabit] = useState({ name:"", goal:"", daily_cost:"", habit_type:"" });
 
   const [friends, setFriends] = useState([]);
   const [pendingReqs, setPending] = useState([]);
@@ -255,7 +270,8 @@ export default function App() {
     try {
       const habit = await api("/habits", { method:"POST", body: newHabit });
       setHabits(prev => [...prev, habit]);
-      setNewHabit({ name:"", goal:"", daily_cost:"" });
+      setNewHabit({ name:"", goal:"", daily_cost:"", habit_type:"" });
+      setHabitStep("type");
       setShowAddHabit(false);
     } catch(e) { console.error(e); }
   }
@@ -582,9 +598,9 @@ export default function App() {
           </div>
 
           {/* Habit legend */}
-          <div style={{ display:"flex",gap:10,marginBottom:"0.75rem",fontSize:11,color:C.muted }}>
-            <span style={{ display:"flex",alignItems:"center",gap:4 }}><span style={{ width:8,height:8,borderRadius:"50%",background:"#10b981",display:"inline-block" }}/> Resisted = savings added</span>
-            <span style={{ display:"flex",alignItems:"center",gap:4 }}><span style={{ width:8,height:8,borderRadius:"50%",background:"#ef4444",display:"inline-block" }}/> Spent = no savings</span>
+          <div style={{ display:"flex",gap:10,marginBottom:"0.75rem",fontSize:11,color:C.muted,flexWrap:"wrap" }}>
+            <span style={{ display:"flex",alignItems:"center",gap:4 }}><span style={{ width:8,height:8,borderRadius:"50%",background:"#10b981",display:"inline-block" }}/> Resisted/Did = savings or streak</span>
+            <span style={{ display:"flex",alignItems:"center",gap:4 }}><span style={{ width:8,height:8,borderRadius:"50%",background:"#ef4444",display:"inline-block" }}/> Spent/Didn't = streak resets</span>
           </div>
 
           {habits.length===0 && (
@@ -598,7 +614,11 @@ export default function App() {
             {visibleHabits.map(h=>(
               <div key={h.id} style={{ background:h.actedToday?(h.action_type==="resisted"?"#f0fdf8":"#fff5f5"):"white",border:`1.5px solid ${h.actedToday?(h.action_type==="resisted"?"#a7f3d0":"#fecaca"):C.border}`,borderRadius:20,padding:"1rem",display:"flex",flexDirection:"column",gap:7,boxShadow:"0 2px 12px rgba(99,102,241,0.05)" }}>
                 <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                  <span style={{ background:"#ede9fe",color:C.primary,fontSize:10,fontWeight:800,padding:"3px 8px",borderRadius:8 }}>₺{safeNum(h.reward)}/day</span>
+                  {h.habit_type === "non_spendable" ? (
+                    <span style={{ background:"#e0f2fe",color:"#0369a1",fontSize:10,fontWeight:800,padding:"3px 8px",borderRadius:8 }}>🏃 Activity</span>
+                  ) : (
+                    <span style={{ background:"#ede9fe",color:C.primary,fontSize:10,fontWeight:800,padding:"3px 8px",borderRadius:8 }}>₺{safeNum(h.reward)}/day</span>
+                  )}
                   <div style={{ display:"flex",alignItems:"center",gap:5 }}>
                     <span style={{ fontSize:11,color:"#f59e0b",fontWeight:700 }}>🔥{h.streak}</span>
                     <button onClick={()=>handleDeleteHabit(h.id)} style={{ background:"none",border:"none",cursor:"pointer",color:"#fca5a5",padding:2,display:"flex" }}><Trash2 size={12}/></button>
@@ -612,18 +632,34 @@ export default function App() {
                   <div style={{ height:"100%",background:h.actedToday?(h.action_type==="resisted"?"#10b981":"#ef4444"):C.primary,borderRadius:99,width:`${h.progress}%`,transition:"width 0.5s" }}/>
                 </div>
                 {h.actedToday ? (
-                  <div style={{ textAlign:"center",padding:"8px 0",borderRadius:11,background:h.action_type==="resisted"?"#dcfce7":"#fee2e2",fontSize:12,fontWeight:700,color:h.action_type==="resisted"?"#059669":"#dc2626" }}>
-                    {h.action_type==="resisted"?`${t.resistedDone} ₺${safeNum(h.reward)}!`:t.spentDone}
+                  <div style={{ textAlign:"center",padding:"8px 0",borderRadius:11,background:
+                    (h.action_type==="resisted"||h.action_type==="did")?"#dcfce7":"#fee2e2",fontSize:12,fontWeight:700,color:
+                    (h.action_type==="resisted"||h.action_type==="did")?"#059669":"#dc2626" }}>
+                    {h.action_type==="resisted" ? `${t.resistedDone} ₺${safeNum(h.reward)}!`
+                    : h.action_type==="did" ? t.didDone
+                    : h.action_type==="spent" ? t.spentDone
+                    : t.didntDone}
                   </div>
                 ) : (
-                  <div style={{ display:"flex",gap:5 }}>
-                    <button onClick={()=>handleHabitAction(h.id,"resisted")} style={{ flex:1,padding:"8px 0",borderRadius:11,border:"none",background:"linear-gradient(135deg,#10b981,#34d399)",color:"white",fontWeight:700,fontSize:11,cursor:"pointer" }}>
-                      {t.resisted}
-                    </button>
-                    <button onClick={()=>handleHabitAction(h.id,"spent")} style={{ flex:1,padding:"8px 0",borderRadius:11,border:"none",background:"linear-gradient(135deg,#ef4444,#f87171)",color:"white",fontWeight:700,fontSize:11,cursor:"pointer" }}>
-                      {t.spent}
-                    </button>
-                  </div>
+                  h.habit_type === "non_spendable" ? (
+                    <div style={{ display:"flex",gap:5 }}>
+                      <button onClick={()=>handleHabitAction(h.id,"did")} style={{ flex:1,padding:"8px 0",borderRadius:11,border:"none",background:"linear-gradient(135deg,#10b981,#34d399)",color:"white",fontWeight:700,fontSize:11,cursor:"pointer" }}>
+                        {t.did}
+                      </button>
+                      <button onClick={()=>handleHabitAction(h.id,"didnt")} style={{ flex:1,padding:"8px 0",borderRadius:11,border:"none",background:"linear-gradient(135deg,#ef4444,#f87171)",color:"white",fontWeight:700,fontSize:11,cursor:"pointer" }}>
+                        {t.didnt}
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display:"flex",gap:5 }}>
+                      <button onClick={()=>handleHabitAction(h.id,"resisted")} style={{ flex:1,padding:"8px 0",borderRadius:11,border:"none",background:"linear-gradient(135deg,#10b981,#34d399)",color:"white",fontWeight:700,fontSize:11,cursor:"pointer" }}>
+                        {t.resisted}
+                      </button>
+                      <button onClick={()=>handleHabitAction(h.id,"spent")} style={{ flex:1,padding:"8px 0",borderRadius:11,border:"none",background:"linear-gradient(135deg,#ef4444,#f87171)",color:"white",fontWeight:700,fontSize:11,cursor:"pointer" }}>
+                        {t.spent}
+                      </button>
+                    </div>
+                  )
                 )}
               </div>
             ))}
@@ -859,31 +895,114 @@ export default function App() {
       {showAddHabit && (
         <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",backdropFilter:"blur(10px)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:"1.5rem" }}>
           <div style={{ background:"white",borderRadius:24,padding:"1.5rem",width:"100%",maxWidth:420,boxShadow:"0 20px 60px rgba(0,0,0,0.15)" }}>
+
+            {/* Header */}
             <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.25rem" }}>
               <div>
                 <h3 style={{ margin:0,fontSize:17,fontWeight:900,color:C.text }}>{t.addHabit}</h3>
-                <p style={{ margin:"3px 0 0",fontSize:12,color:C.muted }}>How much does this habit cost daily?</p>
+                <p style={{ margin:"4px 0 0",fontSize:12,color:C.muted }}>
+                  {habitStep==="type" ? t.habitTypeQ : newHabit.habit_type==="spendable" ? "How much does this habit cost daily?" : "What activity do you want to track?"}
+                </p>
               </div>
-              <button onClick={()=>setShowAddHabit(false)} style={{ background:"#f3f4f6",border:"none",borderRadius:9,padding:8,cursor:"pointer" }}><X size={16}/></button>
+              <button onClick={()=>{ setShowAddHabit(false); setHabitStep("type"); setNewHabit({ name:"", goal:"", daily_cost:"", habit_type:"" }); }} style={{ background:"#f3f4f6",border:"none",borderRadius:9,padding:8,cursor:"pointer" }}><X size={16}/></button>
             </div>
-            {[
-              { key:"name",       label:t.habitName,  ph:"e.g. Smoking, Coffee, Gaming",  type:"text" },
-              { key:"goal",       label:t.habitDesc,  ph:"e.g. Quit smoking to save money", type:"text" },
-              { key:"daily_cost", label:t.dailyCost,  ph:"e.g. 200",                       type:"number" },
-            ].map(f=>(
-              <div key={f.key} style={{ marginBottom:"1rem" }}>
-                <label style={{ display:"block",fontSize:11,fontWeight:700,color:C.muted,marginBottom:5,textTransform:"uppercase",letterSpacing:"0.06em" }}>{f.label}</label>
-                <input value={newHabit[f.key]} onChange={e=>setNewHabit(p=>({...p,[f.key]:e.target.value}))} type={f.type} placeholder={f.ph} style={{ width:"100%",padding:"11px 13px",background:C.bg,border:`1.5px solid ${C.border}`,borderRadius:11,fontSize:14,outline:"none",boxSizing:"border-box",color:C.text }}/>
-              </div>
-            ))}
-            {newHabit.daily_cost && (
-              <div style={{ background:"#f0fdf4",borderRadius:10,padding:"10px 14px",marginBottom:"1rem",fontSize:12,color:"#059669",fontWeight:600 }}>
-                If you resist: <strong>+₺{safeNum(newHabit.daily_cost).toFixed(2)}</strong> added to savings each day 💰
+
+            {/* Step 1: Type selection */}
+            {habitStep === "type" && (
+              <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+                <button onClick={()=>{ setNewHabit(p=>({...p, habit_type:"spendable"})); setHabitStep("details"); }}
+                  style={{ padding:"1.1rem 1.25rem",borderRadius:16,border:`2px solid ${C.border}`,background:"white",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14,transition:"all 0.15s" }}
+                  onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.primary; e.currentTarget.style.background="#f5f3ff"; }}
+                  onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.background="white"; }}
+                >
+                  <div style={{ width:48,height:48,borderRadius:14,background:"#ede9fe",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0 }}>💸</div>
+                  <div>
+                    <div style={{ fontWeight:800,fontSize:14,color:C.text }}>{t.habitTypeSpend}</div>
+                    <div style={{ fontSize:12,color:C.muted,marginTop:2 }}>{t.habitTypeSpendDesc}</div>
+                  </div>
+                </button>
+                <button onClick={()=>{ setNewHabit(p=>({...p, habit_type:"non_spendable"})); setHabitStep("details"); }}
+                  style={{ padding:"1.1rem 1.25rem",borderRadius:16,border:`2px solid ${C.border}`,background:"white",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:14,transition:"all 0.15s" }}
+                  onMouseEnter={e=>{ e.currentTarget.style.borderColor="#10b981"; e.currentTarget.style.background="#f0fdf4"; }}
+                  onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.background="white"; }}
+                >
+                  <div style={{ width:48,height:48,borderRadius:14,background:"#dcfce7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0 }}>🏃</div>
+                  <div>
+                    <div style={{ fontWeight:800,fontSize:14,color:C.text }}>{t.habitTypeNonSpend}</div>
+                    <div style={{ fontSize:12,color:C.muted,marginTop:2 }}>{t.habitTypeNonSpendDesc}</div>
+                  </div>
+                </button>
               </div>
             )}
-            <button onClick={handleAddHabit} style={{ width:"100%",padding:"13px",background:"linear-gradient(135deg,#6366f1,#818cf8)",border:"none",borderRadius:13,color:"white",fontWeight:800,fontSize:15,cursor:"pointer" }}>
-              <Plus size={16} style={{ verticalAlign:"middle",marginRight:6 }}/>{t.addHabit}
-            </button>
+
+            {/* Step 2: Details */}
+            {habitStep === "details" && (
+              <>
+                {/* Type indicator pill */}
+                <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:"1rem" }}>
+                  <button onClick={()=>setHabitStep("type")} style={{ background:"#f0f0ff",border:"none",borderRadius:8,padding:"5px 10px",color:C.primary,fontSize:12,cursor:"pointer",fontWeight:600 }}>← Back</button>
+                  <span style={{ background:newHabit.habit_type==="spendable"?"#ede9fe":"#dcfce7",color:newHabit.habit_type==="spendable"?C.primary:"#059669",fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:99 }}>
+                    {newHabit.habit_type==="spendable"? t.habitTypeSpend : t.habitTypeNonSpend}
+                  </span>
+                </div>
+
+                {/* Habit Name */}
+                <div style={{ marginBottom:"1rem" }}>
+                  <label style={{ display:"block",fontSize:11,fontWeight:700,color:C.muted,marginBottom:5,textTransform:"uppercase",letterSpacing:"0.06em" }}>{t.habitName}</label>
+                  <input
+                    value={newHabit.name}
+                    onChange={e=>setNewHabit(p=>({...p, name:e.target.value}))}
+                    type="text"
+                    placeholder={newHabit.habit_type==="spendable" ? "e.g. Smoking, Coffee, Gaming" : "e.g. Running, Early sleep, Meditation"}
+                    style={{ width:"100%",padding:"11px 13px",background:C.bg,border:`1.5px solid ${C.border}`,borderRadius:11,fontSize:14,outline:"none",boxSizing:"border-box",color:C.text }}
+                  />
+                </div>
+
+                {/* Description */}
+                <div style={{ marginBottom:"1rem" }}>
+                  <label style={{ display:"block",fontSize:11,fontWeight:700,color:C.muted,marginBottom:5,textTransform:"uppercase",letterSpacing:"0.06em" }}>{t.habitDesc}</label>
+                  <input
+                    value={newHabit.goal}
+                    onChange={e=>setNewHabit(p=>({...p, goal:e.target.value}))}
+                    type="text"
+                    placeholder={newHabit.habit_type==="spendable" ? "e.g. Quit smoking to save money" : "e.g. Run 10km every day"}
+                    style={{ width:"100%",padding:"11px 13px",background:C.bg,border:`1.5px solid ${C.border}`,borderRadius:11,fontSize:14,outline:"none",boxSizing:"border-box",color:C.text }}
+                  />
+                </div>
+
+                {/* Daily Cost — only for spendable */}
+                {newHabit.habit_type === "spendable" && (
+                  <>
+                    <div style={{ marginBottom:"1rem" }}>
+                      <label style={{ display:"block",fontSize:11,fontWeight:700,color:C.muted,marginBottom:5,textTransform:"uppercase",letterSpacing:"0.06em" }}>{t.dailyCost}</label>
+                      <input
+                        value={newHabit.daily_cost}
+                        onChange={e=>setNewHabit(p=>({...p, daily_cost:e.target.value}))}
+                        type="number"
+                        placeholder="e.g. 200"
+                        style={{ width:"100%",padding:"11px 13px",background:C.bg,border:`1.5px solid ${C.border}`,borderRadius:11,fontSize:14,outline:"none",boxSizing:"border-box",color:C.text }}
+                      />
+                    </div>
+                    {newHabit.daily_cost && (
+                      <div style={{ background:"#f0fdf4",borderRadius:10,padding:"10px 14px",marginBottom:"1rem",fontSize:12,color:"#059669",fontWeight:600 }}>
+                        💰 If you resist: <strong>+₺{safeNum(newHabit.daily_cost).toFixed(2)}</strong> added to savings each day
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Info for non-spendable */}
+                {newHabit.habit_type === "non_spendable" && (
+                  <div style={{ background:"#f0f9ff",borderRadius:10,padding:"10px 14px",marginBottom:"1rem",fontSize:12,color:"#0369a1",fontWeight:600 }}>
+                    🏃 You'll log "{t.did}" or "{t.didnt}" daily. Streak builds with each success!
+                  </div>
+                )}
+
+                <button onClick={handleAddHabit} style={{ width:"100%",padding:"13px",background:"linear-gradient(135deg,#6366f1,#818cf8)",border:"none",borderRadius:13,color:"white",fontWeight:800,fontSize:15,cursor:"pointer" }}>
+                  <Plus size={16} style={{ verticalAlign:"middle",marginRight:6 }}/>{t.addHabit}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -911,4 +1030,3 @@ export default function App() {
     </div>
   );
 }
-// 01010

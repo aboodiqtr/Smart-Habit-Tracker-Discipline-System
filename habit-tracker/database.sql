@@ -72,3 +72,19 @@ VALUES (
     'admin@admin.ad',
     'admin'
 );
+-- Run this in MySQL Workbench
+USE discipline_app;
+ 
+-- Add habit_type column to habits table
+ALTER TABLE habits
+  ADD COLUMN habit_type ENUM('spendable','non_spendable') DEFAULT 'spendable' AFTER reward;
+ 
+-- Update action_type enum to include did/didnt
+ALTER TABLE habits
+  MODIFY COLUMN action_type ENUM('resisted','spent','did','didnt') NULL;
+ 
+-- Set existing habits as spendable by default
+UPDATE habits SET habit_type = 'spendable' WHERE habit_type IS NULL;
+ 
+-- Verify
+DESCRIBE habits;
