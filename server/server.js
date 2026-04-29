@@ -26,14 +26,18 @@ const JWT_SECRET = process.env.JWT_SECRET || "discipline_secret_key_2024";
 const AES_KEY    = process.env.AES_KEY    || "discipline_aes_key_32chars_here!";
 
 const db = await mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "discipline_app",
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+  // هذا الجزء ضروري جداً لـ Aiven
+  ssl: {
+    rejectUnauthorized: false // يسمح بالاتصال عبر SSL بدون ملف الشهادة يدوياً
+  },
   waitForConnections: true,
   connectionLimit: 10,
 });
-
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "No token" });
