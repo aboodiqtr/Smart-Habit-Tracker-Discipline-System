@@ -12,9 +12,14 @@ dotenv.config();
 
 const app = express();
 const http = createServer(app);
-const io = new Server(http, { cors: { origin: "http://localhost:5173" } });
+const io = new Server(http, { 
+  cors: { 
+    origin: "*", // اسمح لجميع المصادر بالاتصال بالـ Socket
+    methods: ["GET", "POST"]
+  } 
+});
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || "discipline_secret_key_2024";
@@ -288,4 +293,9 @@ io.on("connection", (socket) => {
   });
 });
 
-http.listen(3001, () => console.log("✅ iTrack Server running on http://localhost:3001"));
+// http.listen(3001, () => console.log("✅ iTrack Server running on http://localhost:3001"));
+// أضف '0.0.0.0' لتجعل السيرفر متاحاً لأي جهاز في الشبكة (مثل هاتفك)
+const PORT = 3001;
+http.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ iTrack Server running on http://0.0.0.0:${PORT}`);
+});
