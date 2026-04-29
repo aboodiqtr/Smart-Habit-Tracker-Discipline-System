@@ -300,7 +300,7 @@ io.on("connection", (socket) => {
 
 // http.listen(3001, () => console.log("✅ iTrack Server running on http://localhost:3001"));
 // أضف '0.0.0.0' لتجعل السيرفر متاحاً لأي جهاز في الشبكة (مثل هاتفك)
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 http.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ iTrack Server running on http://0.0.0.0:${PORT}`);
 });
