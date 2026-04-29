@@ -16,7 +16,7 @@ import { io } from "socket.io-client";
 
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const API_BASE = "https://pushing-blighted-esteemed.ngrok-free.dev"; // ← Replace with your ngrok URL
+const API_BASE = "https://smart-habit-tracker-discipline-system.onrender.com"; // ← Replace with your ngrok URL
 const API = `${API_BASE}/api`;
 
 // ── COLORS ──────────────────────────────────────────────────────────────────
@@ -132,7 +132,6 @@ async function apiFetch(path, options = {}) {
   const res = await fetch(`${API}${path}`, {
     headers: {
       "Content-Type": "application/json",
-  
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     ...options,
