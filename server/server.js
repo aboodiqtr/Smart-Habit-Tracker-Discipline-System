@@ -38,6 +38,7 @@ const db = await mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
 });
+
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "No token" });
@@ -299,7 +300,7 @@ io.on("connection", (socket) => {
 
 // http.listen(3001, () => console.log("✅ iTrack Server running on http://localhost:3001"));
 // أضف '0.0.0.0' لتجعل السيرفر متاحاً لأي جهاز في الشبكة (مثل هاتفك)
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 http.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ iTrack Server running on http://0.0.0.0:${PORT}`);
 });
