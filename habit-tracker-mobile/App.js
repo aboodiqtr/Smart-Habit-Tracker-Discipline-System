@@ -132,7 +132,7 @@ async function apiFetch(path, options = {}) {
   const res = await fetch(`${API}${path}`, {
     headers: {
       "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true",
+  
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     ...options,
