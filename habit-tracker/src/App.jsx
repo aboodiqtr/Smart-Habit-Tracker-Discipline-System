@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { io } from "socket.io-client";
 
-const API = "http://localhost:3001/api";
+const API = "https://smart-habit-tracker-discipline-system.onrender.com/api";
 
 async function api(path, options = {}) {
   const token = localStorage.getItem("token");
@@ -18,7 +18,34 @@ async function api(path, options = {}) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Request failed");
+  return data;async function api(path, options = {}) {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    ...options,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+
+  const text = await res.text();
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    console.error("Non-JSON response from server:", text);
+    throw new Error("The server returned HTML instead of JSON. This is likely due to an incorrect API link or route.");
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || "Request failed");
+  }
+
   return data;
+}
 }
 
 const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
@@ -185,7 +212,7 @@ export default function App() {
   }, [page]);
 
   function connectSocket(token) {
-    const s = io("http://localhost:3001", { auth: { token } });
+    const s = io("https://smart-habit-tracker-discipline-system.onrender.com/api", { auth: { token } });
     s.on("online_users", ids => setOnlineIds(ids));
     s.on("new_message", msg => setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]));
     s.on("new_public_message", msg => setPublicMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]));

@@ -20,12 +20,20 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.abood.itrack"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "platforms": 
-    ["ios", "android"]
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "bcb1d31a-9cc8-4f7a-8a11-1248f5638efb"
+      }
+    }
   }
 }
